@@ -29,16 +29,17 @@ def jgb_3graphs():
 	"""
 	f = open('JB2014_JST.csv', 'rU')
 	csv_f = csv.reader(f)
-	next(csv_f) #discards header if any
+	next(csv_f) #discards header
 
 	price=[]
 	size=[]
 	open_price=[]
 	close_price=[]
 	vwap=[]
+	tic=time.clock()
 	for row in csv_f:
 		#pdb.set_trace()
-		date=datetime.strptime(row[1]+' '+row[2],'%m/%d/%Y %I:%M:%S %p')
+		date=datetime.strptime(row[2],'%H:%M:%S.%f')
 		
 		if (dt.time(8, 45) < date.time() < dt.time(15,2)):
 			#if current price is within trading hours
@@ -57,10 +58,16 @@ def jgb_3graphs():
 				del size[:]
 
 	#pdb.set_trace()
+	toc=time.clock()
+	print 'Took ' + str(toc-tic) + ' seconds to read file in Q1'
 	x = np.arange(len(open_price)) + 1 
-	plt.plot(x, np.array(open_price), 'r--', x, np.array(close_price),'bs', x, np.array(vwap),'g^')
+	plt.plot(x, np.array(open_price), 'r--', label='Open')
+	plt.plot(x, np.array(close_price),'bs', label='Close')
+	plt.plot(x, np.array(vwap),'g^', label='VWAP')
+	plt.legend(loc='best', shadow=True)
 	plt.show()
-	return [open_price,close_price,vwap]
+	#pdb.set_trace()
+	return (open_price,close_price,vwap)
 
 def dayEffect(t1,t2,S,d):
 	"""
@@ -216,9 +223,9 @@ def QuadFit(symbol,strikes,expiry_date,r,Call=True,d=0,tol=.0001):
 	impVols=[]
 	tic=time.clock()
 	for i in range(len(strikes)):
-		K = strikes[i]
-		C_price = data.loc[K,:].iloc[0][0]
 		#pdb.set_trace()
+		K = strikes[i]
+		C_price = data.loc[K,:].iloc[0][2] #take option for Strike = K, Ask price
 		impVols.append(impliedVolBisection(S,K,T,interest,C_price,-1,1))
 
 	toc=time.clock()
@@ -228,7 +235,7 @@ def QuadFit(symbol,strikes,expiry_date,r,Call=True,d=0,tol=.0001):
 	z = np.polyfit(x,y,2) #fit a second order polynomial to IV
 	p = np.poly1d(z)
 
-	xp = np.linspace(100, 280, 500)
+	xp = np.linspace(50, 330, 500)
 	plt.plot(x, y, '.', xp, p(xp), '-')
 	plt.ylim(-1,1)
 	plt.show()
@@ -255,10 +262,10 @@ if __name__ == '__main__':
 	dayEffect('2014-01-01','2014-12-31',symbol,day)
 	
 	#Preform Question 3 Hw1
-	print impliedVolBisection(S0,K,T,r,c_Price,x1,x2)
+	impliedVolBisection(S0,K,T,r,c_Price,x1,x2)
 
 	#Preform Question 4 Hw1
-	print impliedVolNewton(S0,K,T,r,c_Price,x0)
+	impliedVolNewton(S0,K,T,r,c_Price,x0)
 
 	#Preform Question 5 Hw1
 	QuadFit(symbol,strikes,expiry_date,r)
